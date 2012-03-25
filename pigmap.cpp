@@ -99,10 +99,15 @@ struct WorkerThreadParams
 void *runWorkerThread(void *arg)
 {
 	WorkerThreadParams *wtp = (WorkerThreadParams*)arg;
+	size_t curridx = 0;
+	size_t totalsize = wtp->zoomtiles.size();
+	cerr << wtp << ": 0/" << totalsize << endl;
 	for (vector<ZoomTileIdx>::const_iterator it = wtp->zoomtiles.begin(); it != wtp->zoomtiles.end(); it++)
 	{
 		int idx = wtp->tocache->getIndex(*it);
 		wtp->tocache->used[idx] = renderZoomTile(*it, *wtp->rj, wtp->tocache->images[idx]);
+		curridx += 1;
+		cerr << wtp << ": " << curridx << "/" << totalsize << endl;
 	}
 	return 0;
 }
@@ -220,8 +225,10 @@ void runMultithreaded(RenderJob& rj, int threads)
 	for (int i = 0; i < threads; i++)
 		wtps[i].rj = &rjs[i];
 	int threadzoom = assignThreadTasks(wtps, *rj.tiletable, rj.mp, threads);
-	for (int i = 0; i < threads; i++)
+	for (int i = 0; i < threads; i++) {
 		cout << "thread " << i << " will render " << rjs[i].stats.reqtilecount << " base tiles" << endl;
+		cerr << "thread " << &wtps[i] << " will generate " << wtps[i].zoomtiles.size() << " item(s)" << endl;
+	}
 
 	// allocate storage for the threads to store their rendered zoom tiles into
 	// (doesn't need to be synchronized, because threads only touch the images for their own
